@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#070514" />
+    <meta
+      name="description"
+      content="Lantern Keeper — a painted firefly-gathering game by RuHRabin. Walk the moonlit shallows, gather falling light, dash through shadow moths, and keep your lantern burning."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070514'/%3E%3Ccircle cx='34' cy='32' r='17' fill='%23f8e9a1'/%3E%3Ccircle cx='41' cy='27' r='15' fill='%23070514'/%3E%3Ccircle cx='16' cy='18' r='2.2' fill='%23ffc845'/%3E%3Ccircle cx='13' cy='40' r='1.5' fill='%23ffc845'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&family=Shippori+Mincho:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <title>Lantern Keeper — a nocturne by RuHRabin</title>
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="scroll-progress"><span id="scrollBar"></span></div>
+
+    <!-- ===================== NAV ===================== -->
+    <header class="nav" id="nav">
+      <a class="brand" href="#play">
+        <span class="brand-glyph" aria-hidden="true">月</span>
+        <span class="brand-text">
+          <strong>LANTERN KEEPER</strong>
+          <small>A NOCTURNE BY RUHRABIN</small>
+        </span>
+      </a>
+
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#play"><i>01</i> Play</a>
+        <a href="#guide"><i>02</i> Field Guide</a>
+        <a href="#bestiary"><i>03</i> Bestiary</a>
+        <a href="#chronicle"><i>04</i> Chronicle</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="soundBtn" class="icon-btn" type="button" aria-pressed="false" title="Toggle sound (M)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z" /><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7" /></svg>
+          <span class="sr-only">Toggle sound</span>
+        </button>
+        <a
+          class="gh-chip"
+          href="https://github.com/RuHRabin"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="RuHRabin on GitHub"
+        >
+          <img src="https://github.com/RuHRabin.png?size=80" alt="" width="22" height="22" loading="lazy" />
+          <span>RuHRabin</span>
+        </a>
+      </div>
+    </header>
+
+    <main>
+      <!-- ===================== GAME ===================== -->
+      <section id="play" class="stage-wrap">
+        <div class="stage" id="stage">
+          <canvas id="game" aria-label="Lantern Keeper game canvas" role="img"></canvas>
+
+          <!-- HUD -->
+          <div class="hud" id="hud" aria-live="off">
+            <div class="hud-top">
+              <div class="hud-score">
+                <p class="label">Light gathered</p>
+                <p class="value" id="score">0</p>
+                <p class="sub">best <span id="best">0</span></p>
+              </div>
+
+              <div class="hud-center">
+                <div class="combo" id="combo"><span id="comboX">×1</span> chain</div>
+                <div class="moonrise" id="moonrise" hidden>
+                  <span class="dot"></span> MOONRISE <b id="moonriseT">0.0</b>s
+                </div>
+              </div>
+
+              <div class="hud-phase">
+                <div class="dial">
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle class="track" cx="24" cy="24" r="21" />
+                    <circle class="fill" id="phaseArc" cx="24" cy="24" r="21" stroke-dasharray="0 132" />
+                  </svg>
+                  <span class="dial-in"><i>月</i><b id="phase">1</b></span>
+                </div>
+                <p class="sub">phase</p>
+              </div>
+            </div>
+
+            <div class="hud-bars">
+              <span class="bar-label">lantern</span>
+              <div class="meter"><span id="lightBar"></span></div>
+              <div class="pips" id="shieldPips" title="Wisp shields"></div>
+              <div class="dash" id="dashWrap" title="Dash (Space)">
+                <span class="dash-label">dash</span>
+                <div class="dash-meter"><span id="dashBar"></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mobile controls -->
+          <div class="touch-pad" id="touchPad" hidden>
+            <button class="tbtn" data-dir="-1" aria-label="Move left">‹</button>
+            <button class="tbtn dash-btn" data-dash aria-label="Dash">⟡</button>
+            <button class="tbtn" data-dir="1" aria-label="Move right">›</button>
+          </div>
+
+          <button class="pause-btn" id="pauseBtn" type="button" hidden aria-label="Pause">
+            <svg viewBox="0 0 12 14" aria-hidden="true"><rect width="4" height="14" rx="1" /><rect x="8" width="4" height="14" rx="1" /></svg>
+          </button>
+
+          <!-- ===== Overlays ===== -->
+          <div class="overlay" id="ovStart">
+            <div class="ov-inner">
+              <p class="eyebrow center">蛍狩り · a firefly hunt</p>
+              <h1 class="title">Lantern <em>Keeper</em></h1>
+              <p class="lede">
+                The fireflies are falling toward the water. Carry your lantern beneath them,
+                gather the light before it drowns, and <em>dash</em> through the shadow moths
+                that hunt your flame.
+              </p>
+
+              <div class="diff" role="radiogroup" aria-label="Difficulty">
+                <button class="diff-btn" data-diff="calm" role="radio" aria-checked="false">
+                  <b>Calm</b><span>a gentle night</span>
+                </button>
+                <button class="diff-btn is-on" data-diff="nocturne" role="radio" aria-checked="true">
+                  <b>Nocturne</b><span>as intended</span>
+                </button>
+                <button class="diff-btn" data-diff="tempest" role="radio" aria-checked="false">
+                  <b>Tempest</b><span>the moon is angry</span>
+                </button>
+              </div>
+
+              <div class="ov-actions">
+                <button class="btn btn-primary" id="startBtn" type="button">
+                  Begin the night
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </button>
+                <a class="btn btn-ghost" href="#guide">How to play</a>
+              </div>
+              <p class="hint">Pointer or ← → · <kbd>Space</kbd> dash · <kbd>P</kbd> pause · <kbd>M</kbd> mute</p>
+            </div>
+          </div>
+
+          <div class="overlay" id="ovPause" hidden>
+            <div class="ov-inner">
+              <p class="eyebrow center">休 · paused</p>
+              <h2 class="title sm">The night holds <em>its breath</em></h2>
+              <div class="ov-actions">
+                <button class="btn btn-primary" id="resumeBtn" type="button">Keep walking</button>
+                <button class="btn btn-ghost" id="restartBtn" type="button">Start over</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="overlay" id="ovOver" hidden>
+            <div class="ov-inner">
+              <p class="eyebrow center">終 · the lantern went dark</p>
+              <h2 class="title sm">You gathered <em id="finalScore">0</em> light</h2>
+              <p class="badge" id="recordBadge" hidden>✦ A new record for RuHRabin</p>
+              <div class="stat-row">
+                <div class="stat"><p>Phase reached</p><b id="finalPhase">1</b></div>
+                <div class="stat"><p>Longest chain</p><b id="finalChain">0</b></div>
+                <div class="stat"><p>Gathered</p><b id="finalCaught">0</b></div>
+                <div class="stat"><p>Best night</p><b id="finalBest">0</b></div>
+              </div>
+              <div class="ov-actions">
+                <button class="btn btn-primary" id="againBtn" type="button">Walk again</button>
+                <button class="btn btn-ghost" id="shareBtn" type="button">Copy result</button>
+                <a class="btn btn-ghost" href="#chronicle">Chronicle</a>
+              </div>
+            </div>
+          </div>
+
+          <p class="stage-hint" id="stageHint" hidden>gather the gold · avoid the dark</p>
+        </div>
+      </section>
+
+      <!-- ===================== MARQUEE ===================== -->
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee-track" id="marquee"></div>
+      </div>
+
+      <!-- ===================== GUIDE ===================== -->
+      <section id="guide" class="section">
+        <div class="wrap grid-12">
+          <div class="col-5">
+            <p class="eyebrow reveal">Field guide · 手引き</p>
+            <h2 class="h2 reveal">How to keep <em>a lantern lit</em></h2>
+            <p class="body reveal">
+              Every phase, the moon waxes: the sky grows busier, the moths bolder, and the
+              light sweeter. Chain catches without missing to raise your multiplier — a
+              perfect chain is worth more than a careful one.
+            </p>
+            <p class="body reveal">
+              Rare white <b>moonblooms</b> open a brief <b>Moonrise</b>: your glow widens,
+              time slows, and every light counts double. Cyan <b>wisps</b> leave a shield
+              that eats one moth. And your <b>dash</b> pulls nearby light straight in.
+            </p>
+
+            <div class="keys reveal">
+              <span class="key"><kbd>← →</kbd><i>walk</i></span>
+              <span class="key"><kbd>A D</kbd><i>walk</i></span>
+              <span class="key"><kbd>Space</kbd><i>dash</i></span>
+              <span class="key"><kbd>P</kbd><i>pause</i></span>
+              <span class="key"><kbd>M</kbd><i>mute</i></span>
+              <span class="key"><kbd>R</kbd><i>restart</i></span>
+            </div>
+            <a class="btn btn-primary reveal" href="#play">
+              Take the lantern
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
+            </a>
+          </div>
+
+          <div class="col-7">
+            <div class="step-grid" id="stepGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== BESTIARY ===================== -->
+      <section id="bestiary" class="section alt">
+        <div class="wrap">
+          <p class="eyebrow center reveal">Bestiary · 図鑑</p>
+          <h2 class="h2 center reveal">Everything that falls <em>through the dark</em></h2>
+          <div class="beast-grid" id="beastGrid"></div>
+        </div>
+      </section>
+
+      <!-- ===================== CHRONICLE ===================== -->
+      <section id="chronicle" class="section">
+        <div class="wrap grid-12">
+          <div class="col-5">
+            <p class="eyebrow reveal">Chronicle · 水鏡</p>
+            <h2 class="h2 reveal">The water remembers <em>every night</em></h2>
+            <p class="body reveal">
+              Your six finest hauls of light, kept in this browser alone — the way a
+              reflection lives only in its own pool.
+            </p>
+            <div class="totals reveal" id="totals"></div>
+            <div class="ov-actions reveal">
+              <a class="btn btn-primary" href="#play">Walk another night</a>
+              <button class="btn btn-ghost" id="clearBtn" type="button">Clear chronicle</button>
+            </div>
+          </div>
+          <div class="col-7">
+            <ol class="runs reveal" id="runs"></ol>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ===================== FOOTER ===================== -->
+    <footer class="footer">
+      <div class="wrap foot-grid">
+        <div>
+          <a class="brand" href="#play">
+            <span class="brand-glyph" aria-hidden="true">月</span>
+            <span class="brand-text">
+              <strong>LANTERN KEEPER</strong>
+              <small>A NOCTURNE BY RUHRABIN</small>
+            </span>
+          </a>
+          <p class="foot-note">
+            A painted game of falling light — built with plain HTML, CSS and JavaScript.
+            Hand-rendered on canvas, scored with synthesized night.
+          </p>
+          <a class="gh-card" href="https://github.com/RuHRabin" target="_blank" rel="noopener noreferrer">
+            <img src="https://github.com/RuHRabin.png?size=120" alt="RuHRabin avatar" width="44" height="44" loading="lazy" />
+            <span>
+              <b>RuHRabin</b>
+              <i>github.com/RuHRabin →</i>
+            </span>
+          </a>
+        </div>
+
+        <div>
+          <p class="foot-h">Sections</p>
+          <ul class="foot-list">
+            <li><a href="#play">Play</a></li>
+            <li><a href="#guide">Field Guide</a></li>
+            <li><a href="#bestiary">Bestiary</a></li>
+            <li><a href="#chronicle">Chronicle</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="foot-h">Colophon</p>
+          <ul class="foot-list">
+            <li><span>Canvas 2D engine</span></li>
+            <li><span>WebAudio score</span></li>
+            <li><span>No frameworks</span></li>
+            <li><span>Saves locally</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="wrap foot-base">
+        <p>© <span id="year">2026</span> RuHRabin · 月が綺麗ですね</p>
+        <a href="#play" class="to-top">Back to the lantern <span>↑</span></a>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
